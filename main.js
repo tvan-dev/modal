@@ -3,7 +3,15 @@ const $$ = document.querySelectorAll.bind(document);
 
 
 function Modal () {
-    this.openModal = function (content) {
+    this.openModal = function (options = {}) {
+        const {templateId} = options
+        const template = $(`#${templateId}`)
+        if(!template) {
+            console.error(`${templateId} not found`);
+            return;
+        }
+        const content = template.content.cloneNode(true)
+
         const backdrop = document.createElement("div");
         backdrop.className = "modal-backdrop";
 
@@ -17,7 +25,7 @@ function Modal () {
         const contents = document.createElement("div");
         contents.className = "modal-content";
         
-        contents.innerHTML = content;
+        contents.append(content)
         container.append(btnClose, contents);
         backdrop.append(container);
         document.body.append(backdrop);
@@ -52,17 +60,13 @@ function Modal () {
 }
 
 const modal = new Modal();
-// const template1 = $(".modal-1").innerHTML;
-const template2 = $(".modal-2").innerHTML;
-
-
 
 $("#open-modal-1").onclick = function () {
-    modal.openModal(`${$(".modal-1").innerHTML}`);
+    modal.openModal({templateId: "modal-1"})
 }
 $("#open-modal-2").onclick = function () {
-    modal.openModal(`${template2}`);
+    modal.openModal({templateId: "modal-2"})
 }
 $("#open-modal-3").onclick = function () {
-    modal.openModal("<h1>Modal 3: content akfnf container.</h1>")
+    modal.openModal({templateId: "modal-3"})
 }
