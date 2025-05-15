@@ -3,6 +3,26 @@ const $$ = document.querySelectorAll.bind(document);
 
 
 function Modal () {
+    function getScrollbarWidth() {
+        if (getScrollbarWidth.value) {
+            return getScrollbarWidth.value
+        }
+
+        const div = document.createElement("div");
+        Object.assign(div.style, {
+            position: "absolute",
+            top: "-9999px",
+            overflow: "scroll",
+        })
+
+        document.body.appendChild(div);
+        const width = div.offsetWidth - div.clientWidth;
+        getScrollbarWidth.value = width;
+        // remove div after getting scrollbar width
+        document.body.removeChild(div);
+        return width;
+    }
+
     this.openModal = function (options = {}) {
         const {templateId, allowBackdropClose = true} = options
         const template = $(`#${templateId}`)
@@ -56,7 +76,10 @@ function Modal () {
 
         //Disable scroll
         document.body.classList.add("no-scroll")
+        document.body.style.paddingRight = `${getScrollbarWidth()}px`
         return backdrop;
+
+
         // vì return lại backdrop nên có thể sử dụng backdrop ở ngoài, ví dụ sau khi mở modal thì có nhiều sự kiện xảy ra trong modal nữa, như submit form
     };
 
@@ -66,6 +89,7 @@ function Modal () {
             element.remove(); 
         }
         document.body.classList.remove("no-scroll")
+        document.body.style.paddingRight = "0px"
     }
     
     
@@ -89,8 +113,11 @@ $("#open-modal-3").onclick = function () {
     if(loginForm) {
         loginForm.onsubmit = function (e) {
         e.preventDefault()
-        const name = $(".nameInput")
-        console.log(name.value);
+        const nameInput = $(".nameInput")
+        const submitModal = $(".submit-modal")
+        submitModal.onclick = () => {
+            console.log(nameInput.value);
+        }
     }
     }
 }
