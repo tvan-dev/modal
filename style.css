@@ -56,6 +56,7 @@ trong khi đó thì VISIBILITY + opacity có thể tạo hiệu ứng transition
     min-height: 300px;
     background-color: white;
     border-radius: 8px;
+    padding: 20px 20px 0;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -86,6 +87,49 @@ trong khi đó thì VISIBILITY + opacity có thể tạo hiệu ứng transition
     max-height: 500px;
     overflow-y: auto;
 }
+
 .no-scroll {
     overflow: hidden;
+}
+.class1 {
+    background-color:rgb(231, 241, 78);
+}
+.class2 {
+    font-style: italic;
+}
+
+.content-body, ul {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 30px;
+    margin: 10px;
+}
+
+
+.modal-footer {
+    display: flex;
+    padding: 8px 16px;
+    gap: 20px;
+}
+.btn-ok {
+    background-color: rgb(7, 235, 64);
+    border-radius: 8px;
+    font-size: 1.6rem;
+    cursor: pointer;
+}
+.btn-cancel {
+    background-color: rgb(235, 60, 7);
+    border-radius: 8px;
+    font-size: 1.6rem;
+    cursor: pointer;
+}
+.btn-more {
+    background-color: rgb(235, 7, 220);
+    border-radius: 8px;
+    font-size: 1.6rem;
+    cursor: pointer;
+}
+.pull-Left{
+    margin-right: auto;
 }
