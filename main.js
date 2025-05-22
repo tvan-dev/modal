@@ -1,35 +1,28 @@
 const $ = document.querySelector.bind(document);
 const $$ = document.querySelectorAll.bind(document);
 
+Popzy.elements = []
 
-function Modal (options = {}) {
-    const {templateId, 
-            closeMethod = ["buttonX", "overlay", "escape"], 
-            destroyOnClose = true, 
-            cssClass = [],
-            footer = false,
-            onOpen,
-            onClose,
-        } = options
+function Popzy (options = {}) {
+    this.opt = Object.assign({ 
+            closeMethod : ["buttonX", "overlay", "escape"], 
+            destroyOnClose : true, 
+            cssClass : [],
+            footer : false,
+        },options);
     
-    const template = $(`#${templateId}`)
-        if(!template) {
-            console.error(`${templateId} not found`);
-            return;
-        }
+    this.template = $(`#${this.opt.templateId}`);
 
-    /**
-     * Tính và trả về độ rộng của thanh cuộn (scrollbar) trình duyệt.
-     * Kết quả được lưu đệm vào thuộc tính `getScrollbarWidth.value` để tái sử dụng,
-     * tránh phải tạo phần tử tạm và tính toán lại nhiều lần.
-     *
-     * @returns {number} Độ rộng của scrollbar (tính bằng pixel).
-     */
-    function getScrollbarWidth() {
-        if (getScrollbarWidth.value) {
-            return getScrollbarWidth.value
-        }
+    if(!this.template) {
+        console.error(`${this.opt.templateId} not found`);
+        return;
+    }
+    this._handleEscapeKey = this._handleEscapeKey.bind(this);
 
+}
+
+Popzy.prototype.getScrollbarWidth = function() {
+        if(this._srollbarWidth) return this._srollbarWidth
         const div = document.createElement("div");
         Object.assign(div.style, {
             position: "absolute",
@@ -38,220 +31,191 @@ function Modal (options = {}) {
         })
 
         document.body.appendChild(div);
-        const width = div.offsetWidth - div.clientWidth;
-        getScrollbarWidth.value = width;
+        this._srollbarWidth = div.offsetWidth - div.clientWidth;
         // remove div after getting scrollbar width
         document.body.removeChild(div);
-        return width;
-    }
-
-    /**
-     * Tạo cấu trúc DOM cho modal (backdrop + container + nội dung + footer nếu có),
-     * nhưng chưa bật animation/show.
-     */
-    this.createModal = function () {
+        return this._srollbarWidth;
+}
+Popzy.prototype.createModal = function () {
         // cloneNode chỉ copy được nội dung của phần tử, không copy  sự kiện handle của phần tử
-        const content = template.content.cloneNode(true)
+        const content = this.template.content.cloneNode(true)
 
         this._backdrop = document.createElement("div");
-        this._backdrop.className = "modal-backdrop";
+        this._backdrop.className = "popzy__backdrop";
         const container = document.createElement("div");
-        container.className = "modal-container";
-        container.classList.add(...cssClass);
-        if(closeMethod.includes("buttonX")) {
-            const btnClose = document.createElement("button");
-            btnClose.className = "modal-close";
-            btnClose.innerHTML = "&times;"
-            container.appendChild(btnClose);
+        container.className = "popzy__container";
+        container.classList.add(...this.opt.cssClass);
 
-            btnClose.onclick = () => this.close()
+        if(this.opt.closeMethod.includes("buttonX")) {
+            const btnClose = this._createButton("&times;", ['popzy__close'], () => this.close())
+            container.appendChild(btnClose);
         }
 
         const contents = document.createElement("div");
-        contents.className = "modal-content";
+        contents.className = "popzy__content";
         
         contents.append(content) // append nội dung của template vào modal-content
         container.appendChild(contents);
 
-        if(footer) {
+        if(this.opt.footer) {
             this._modalFooter = document.createElement("div");
-            this._modalFooter.className = "modal-footer";
+            this._modalFooter.className = "popzy__footer";
 
             container.append(this._modalFooter);
         }
 
         this._backdrop.append(container);
         document.body.append(this._backdrop);
-    };
+};
 
-    /**
-     * Thiết lập nội dung HTML cho phần footer.
-     *
-     * @param {string} htmlString - Chuỗi HTML muốn chèn vào footer.
-     */
-    this.setFooterContent = function(htmlString) {
-        if(htmlString) {
-            this._modalFooter.innerHTML = htmlString;
-        }
-    };
+Popzy.prototype.setFooterContent = function(htmlString) {
+    if(htmlString) {
+        this._modalFooter.innerHTML = htmlString;
+    }
+};
 
-    /**
-     * Thêm một nút vào footer modal với callback khi click.
-     *
-     * @param {string} text - Văn bản hiển thị trên nút.
-     * @param {string[]} [cssArray=[]] - Mảng class CSS gán cho nút.
-     * @param {function} callback - Hàm sẽ được gọi khi nút được click.
-     */
-    this.setFooterButton = function (text, cssArray=[], callback) {
-        if (text) {
-            const button = document.createElement("button")
-            button.innerHTML = text
-            button.classList.add(...cssArray)
-            button.onclick = (e) => callback(e)
-            this._modalFooter.appendChild(button)
-        }
-    };
+Popzy.prototype.setFooterButton = function (text, cssArray=[], callback) {
+    const button = this._createButton(text, cssArray, callback)
+    this._modalFooter.appendChild(button)
     
-    /**
-     * Mở modal: khởi tạo nếu cần, thêm class `show` để bật animation,
-     * đăng ký sự kiện đóng (overlay, escape), vô hiệu hóa cuộn trang.
-     *
-     * @returns {HTMLElement} Phần tử backdrop của modal.
-     */
-    this.open = function() {
-        if(!this._backdrop) {
-            this.createModal();
-        }
-        setTimeout(() => {
-            this._backdrop.classList.add("show");
-        },0)
+};
 
-        if(closeMethod.includes("overlay")) {
-            this._backdrop.onclick =  (e) =>{
-                if(e.target === this._backdrop) {
-                    this.close()
-                }
-            }
-        }
-
-        if (closeMethod.includes("escape")) {
-            document.addEventListener("keydown",  (e) => {
-                if (e.key === "Escape") {
-                    this.close()
-                }
-            })
-        }
-        
-        //Disable scroll
-        document.body.classList.add("no-scroll")
-        document.body.style.paddingRight = `${getScrollbarWidth()}px`
-        
-        this._onTransitionEnd(() => {
-            if(typeof onOpen === "function") onOpen()
-        })
-
-        return this._backdrop
-    };
-
-    /**
-     * Đăng ký một callback thực thi sau khi animation transition
-     * của backdrop kết thúc (ngoại trừ transform).
-     *
-     * @param {function} callback - Hàm được gọi khi transition kết thúc.
-     */
-    this._onTransitionEnd = (callback) => {
-        this._backdrop.ontransitionend = (e) => {
-            if(e.propertyName === "transform") return;
-            if(typeof callback === "function") callback();
-        }
-    };
-    
-    /**
-     * Đóng modal: bỏ class `show`, gọi onClose sau khi transition kết thúc,
-     * khôi phục cuộn trang và gỡ backdrop nếu destroy = true.
-     *
-     * @param {boolean} [destroy=destroyOnClose] - Nếu true sẽ xóa backdrop khỏi DOM.
-     */
-    this.close = function( destroy = destroyOnClose) {
-        this._backdrop.classList.remove("show");
-        this._onTransitionEnd(() => {
-            if(this._backdrop && destroy) {
-                this._backdrop.remove(); 
-                this._backdrop = null;
-                this._modalFooter = null;
-            }
-            if(typeof onClose === "function") onClose() 
-        })
-        
-        document.body.classList.remove("no-scroll")
-        document.body.style.paddingRight = "0px"
-        
-        
-    };
-
-    /**
-     * Đóng và xóa hẳn modal (tương tự close(true)).
-     */
-    this.destroy = () => {
-        this.close(true)
+Popzy.prototype._handleEscapeKey = function (e) {
+    const lastModal = Popzy.elements[Popzy.elements.length -1]
+    if(e.key === "Escape" && lastModal === this) {
+        this.close()
     }
 }
 
+Popzy.prototype._onTransitionEnd = function (callback) {
+    this._backdrop.ontransitionend = (e) => {
+        if(e.propertyName === "transform") return;
+        if(typeof callback === "function") callback();
+    }
+};
 
-// modal 1
-const modal1 = new Modal({
-        templateId: "modal-1",
+Popzy.prototype._createButton = function(text, cssArray=[], callback)  {
+    if (text) {
+        const button = document.createElement("button")
+        button.innerHTML = text
+        button.classList.add(...cssArray)
+        button.onclick = callback
+        return button
+    }
+}
+
+Popzy.prototype.open = function() {
+    Popzy.elements.push(this)
+    if(!this._backdrop) {
+        this.createModal();
+    }
+    setTimeout(() => {
+        this._backdrop.classList.add("popzy--show");
+    },0)
+
+    if(this.opt.closeMethod.includes("overlay")) {
+        this._backdrop.onclick =  (e) =>{
+            if(e.target === this._backdrop) {
+                this.close()
+            }
+        }
+    }
+
+    if (this.opt.closeMethod.includes("escape")) {
+        document.addEventListener("keydown", this._handleEscapeKey)
+    }
+    
+    //Disable scroll
+    document.body.classList.add("no-scroll")
+    document.body.style.paddingRight = this.getScrollbarWidth() + "px"
+    
+    this._onTransitionEnd(this.opt.onOpen)
+
+    return this._backdrop
+};
+
+Popzy.prototype.close = function(destroy = this.opt.destroyOnClose) {
+    Popzy.elements.pop()
+    if (this.opt.closeMethod.includes("escape")) {
+        document.removeEventListener("keydown", this._handleEscapeKey)
+    }
+    this._backdrop.classList.remove("popzy--show");
+    this._onTransitionEnd(() => {
+        if(this._backdrop && destroy) {
+            this._backdrop.remove(); 
+            this._backdrop = null;
+            this._modalFooter = null;
+        }
+        if(typeof this.opt.onClose === "function") this.opt.onClose() 
+    })
+    
+    if(Popzy.elements.length === 0) {
+        document.body.classList.remove("no-scroll")
+        document.body.style.paddingRight = "0px"
+    }
+    
+    
+};
+
+Popzy.prototype.destroy = function() {
+    this.close(true)
+}
+// popzy-1
+const popzy1 = new Popzy({
+        templateId: "popzy-1",
         closeMethod: ["overlay", "escape"],
         footer: true, // hiện footer
         cssClass: ["class1", "class2"],
         destroyOnClose: true,
         footer: true,
         onOpen: () => {
-            // console.log("Modal 1 opened");
+            console.log("popzy-1 opened");
             //logic khi mở modal
         },
         onClose: () => {
-            // console.log("Modal 1 closed");
+            // console.log("popzy-1 closed");
             //logic khi đóng modal
         }
     });
 
-$("#open-modal-1").onclick = function () {
-    modal1.open()
-    modal1.setFooterButton("MORE",["btn", "btn-more", "pull-Left"], function(e) {
+$("#open-popzy-1").onclick = function (e) {
+    e.currentTarget.blur();  
+    popzy1.open()
+
+    popzy1.setFooterButton("MORE",["btn", "btn-more", "pull-Left"], function(e) {
         console.log(e.target.innerText);
         //logic khi click vào button
     }) 
-    modal1.setFooterButton("OK",["btn", "btn-ok"], function(e) {
+    popzy1.setFooterButton("OK",["btn", "btn-ok"], function(e) {
         console.log(e.target.innerText);
         //logic khi click vào button
     })  
-    modal1.setFooterButton("CANCEL",["btn", "btn-cancel"], function(e) {
+    popzy1.setFooterButton("CANCEL",["btn", "btn-cancel"], function(e) {
         console.log(e.target.innerText);
-        modal1.close()
+        popzy1.close()
         //logic khi click vào button
     }) 
 }
 
-//modal 2
-const modal2 = new Modal({
-        templateId: "modal-2",
+//popzy 2
+const popzy2 = new Popzy({
+        templateId: "popzy-2",
         cssClass: ["class1", "class2"],
-        destroyOnClose: false,
+        destroyOnClose: true,
         footer: true}
     );
 
-$("#open-modal-2").onclick = function () {
-    modal2.open()
+$("#open-popzy-2").onclick = function () {
+    popzy2.open()
 }
 
-//modal 3
-const modal3 = new Modal({
-        templateId: "modal-3",
+//popzy 3
+const popzy3 = new Popzy({
+        templateId: "popzy-3",
         closeMethod: ["escape"]})
 
-$("#open-modal-3").onclick = function () {
-    const modalElement = modal3.open() // không cho phép đóng modal khi click vào backdrop
+$("#open-popzy-3").onclick = function () {
+    const modalElement = popzy3.open() // không cho phép đóng modal khi click vào backdrop
     const loginForm = modalElement.querySelector("#login-form")
     if(loginForm) {
         loginForm.onsubmit = function (e) {

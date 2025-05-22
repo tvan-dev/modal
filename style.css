@@ -28,7 +28,7 @@ main {
     cursor: pointer;
 }
 
-.modal-backdrop {
+.popzy__backdrop {
     position: fixed;
     inset: 0;
     z-index: 1000;
@@ -45,12 +45,12 @@ main {
 /* visibility : hidden phần tử ẩn khỏi giao diện nhưng vẫn chiếm không gian layout
 >< display: none cũng tương tự nhưng không chiếm không gian, ẩn ngay lập tức, 
 trong khi đó thì VISIBILITY + opacity có thể tạo hiệu ứng transition fade in/out mượt */
-.modal-backdrop.show {
+.popzy__backdrop.popzy--show {
     opacity: 1;
     visibility: visible;
 }
 
-.modal-container {
+.popzy__container {
     position: relative;
     width: min(600px, 90%);
     min-height: 300px;
@@ -64,10 +64,10 @@ trong khi đó thì VISIBILITY + opacity có thể tạo hiệu ứng transition
     transition: transform 0.3s ease-in-out;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);   
 }
-.modal-backdrop.show .modal-container {
+.popzy__backdrop.popzy--show .popzy__container {
     transform: scale(1);
 }
-.modal-close {
+.popzy__close {
     position: absolute;
     top: 10px;
     right: 10px;
@@ -78,10 +78,10 @@ trong khi đó thì VISIBILITY + opacity có thể tạo hiệu ứng transition
     text-align: center;
     line-height: 32px;
 }
-.modal-close:hover {
+.popzy__close:hover {
     background-color: rgba(7, 235, 64, 0.5);
 }
-.modal-content {
+.popzy__content {
     margin: 10px;
     text-align: center;
     max-height: 500px;
@@ -107,7 +107,7 @@ trong khi đó thì VISIBILITY + opacity có thể tạo hiệu ứng transition
 }
 
 
-.modal-footer {
+.popzy__footer {
     display: flex;
     padding: 8px 16px;
     gap: 20px;
